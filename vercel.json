@@ -1,6 +1,29 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+  "functions": {
+    "api/story.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/story",
+      "dest": "/api/story.js"
+    },
+    {
+      "src": "/story/(.*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i)(facebook|twitter|whatsapp|linkedin|telegram|instagram|threads|bot|crawler|spider|preview)"
+        }
+      ],
+      "dest": "/api/story.js?slug=$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
   ]
 }
