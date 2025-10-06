@@ -26,39 +26,41 @@ export default async function handler(req, res) {
 
     const story = snapshot.docs[0].data();
 
-    // Detect if request comes from a bot
+    // Detect bots via User-Agent
     const userAgent = req.headers["user-agent"] || "";
     const isBot = /bot|facebook|twitter|whatsapp|linkedin|telegram|instagram|threads|crawler|spider|preview/i.test(
       userAgent
     );
 
     if (!isBot) {
-      // Humans should see the real React Netlify app
-      return res.redirect(302, `https://storyplugs.netlify.app/story/${slug}`);
+      // Redirect humans to your React page
+      return res.redirect(302, `https://story-plugs-hub.vercel.app/story/${slug}`);
     }
 
-    // Build Open Graph meta for bots
-    const metaHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta property="og:title" content="${story.title}" />
-  <meta property="og:description" content="${story.excerpt || story.content.slice(0, 150)}" />
-  <meta property="og:image" content="${story.coverUrl}" />
-  <meta property="og:type" content="article" />
-  <meta property="og:url" content="https://storyplugs.netlify.app/story/${slug}" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${story.title}" />
-  <meta name="twitter:description" content="${story.excerpt || story.content.slice(0, 150)}" />
-  <meta name="twitter:image" content="${story.coverUrl}" />
-  <title>${story.title}</title>
-</head>
-<body>
-  <h1>${story.title}</h1>
-  <p>${story.excerpt || story.content.slice(0, 150)}...</p>
-  <img src="${story.coverUrl}" alt="cover" style="max-width:400px;" />
-</body>
-</html>`;
+    // Serve OG preview HTML for bots
+    const metaHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta property="og:title" content="${story.title}" />
+        <meta property="og:description" content="${story.excerpt || story.content.slice(0,150)}" />
+        <meta property="og:image" content="${story.coverUrl}" />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://story-plugs-hub.vercel.app/story/${slug}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="${story.title}" />
+        <meta name="twitter:description" content="${story.excerpt || story.content.slice(0,150)}" />
+        <meta name="twitter:image" content="${story.coverUrl}" />
+        <title>${story.title}</title>
+      </head>
+      <body>
+        <h1>${story.title}</h1>
+        <p>${story.excerpt || story.content.slice(0,150)}...</p>
+        <img src="${story.coverUrl}" alt="cover" style="max-width:400px;" />
+      </body>
+      </html>
+    `;
 
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
