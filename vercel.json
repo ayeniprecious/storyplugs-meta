@@ -22,6 +22,10 @@
       "dest": "/api/story.js?slug=$1"
     },
     {
+      "src": "/story/(.*)",
+      "dest": "https://storyplugs.netlify.app/story/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/"
     }
