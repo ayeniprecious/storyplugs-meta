@@ -1,5 +1,6 @@
 import admin from "firebase-admin";
 
+// Initialize Firebase Admin only once
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -26,6 +27,16 @@ export default async function handler(req, res) {
 
     const story = snapshot.docs[0].data();
 
+    // Detect if request comes from a bot
+    const userAgent = req.headers["user-agent"] || "";
+    const isBot = /bot|facebook|twitter|whatsapp|crawler|spider|preview/i.test(userAgent);
+
+    if (!isBot) {
+      // 👇 Redirect humans to your real React site
+      return res.redirect(302, `https://storyplugs.netlify.app/story/${slug}`);
+    }
+
+    // 👇 Build Open Graph meta HTML for bots
     const metaHtml = `
       <!DOCTYPE html>
       <html lang="en">
@@ -52,6 +63,7 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
+
   } catch (error) {
     console.error("Error loading story:", error);
     res.status(500).json({ error: "Internal Server Error" });
