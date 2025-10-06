@@ -1,12 +1,11 @@
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin only once
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     }),
   });
 }
@@ -26,35 +25,37 @@ export default async function handler(req, res) {
 
     const story = snapshot.docs[0].data();
 
-    // Detect bots
-    const userAgent = req.headers["user-agent"] || "";
-    const isBot = /bot|facebook|twitter|whatsapp|linkedin|telegram|instagram|threads|preview/i.test(userAgent);
+    // Bot detection
+    const ua = req.headers["user-agent"] || "";
+    const isBot = /bot|facebook|twitter|whatsapp|linkedin|telegram|instagram|threads|crawler|spider|preview/i.test(
+      ua
+    );
 
     if (!isBot) {
-      // Human → let React SPA handle the route
-      return res.redirect(302, `/story/${slug}`);
+      // Redirect humans to SPA
+      return res.redirect(302, `https://storyplugs.vercel.app/story/${slug}`);
     }
 
-    // Bot → serve OG meta
+    // Return OG meta for bots
     const metaHtml = `
       <!DOCTYPE html>
       <html lang="en">
       <head>
-        <meta charset="UTF-8" />
+        <meta charset="UTF-8"/>
         <meta property="og:title" content="${story.title}" />
-        <meta property="og:description" content="${story.excerpt || story.content.slice(0, 150)}" />
+        <meta property="og:description" content="${story.excerpt || story.content.slice(0,150)}" />
         <meta property="og:image" content="${story.coverUrl}" />
         <meta property="og:type" content="article" />
         <meta property="og:url" content="https://storyplugs.vercel.app/story/${slug}" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="${story.title}" />
-        <meta name="twitter:description" content="${story.excerpt || story.content.slice(0, 150)}" />
+        <meta name="twitter:description" content="${story.excerpt || story.content.slice(0,150)}" />
         <meta name="twitter:image" content="${story.coverUrl}" />
         <title>${story.title}</title>
       </head>
       <body>
         <h1>${story.title}</h1>
-        <p>${story.excerpt || story.content.slice(0, 150)}...</p>
+        <p>${story.excerpt || story.content.slice(0,150)}...</p>
         <img src="${story.coverUrl}" alt="cover" style="max-width:400px;" />
       </body>
       </html>
@@ -62,9 +63,8 @@ export default async function handler(req, res) {
 
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
-
-  } catch (error) {
-    console.error("Error loading story:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("Internal Server Error");
   }
 }
