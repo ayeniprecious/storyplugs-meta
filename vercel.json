@@ -2,10 +2,6 @@
   "version": 2,
   "routes": [
     {
-      "src": "/api/story",
-      "dest": "/api/story.js"
-    },
-    {
       "src": "/story/(.*)",
       "has": [
         {
