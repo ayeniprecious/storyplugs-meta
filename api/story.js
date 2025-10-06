@@ -70,6 +70,13 @@ const { slug } = req.query;
     `;
     console.log(metaHtml);
     console.log(story);
+
+    if (snapshot.docs.length === 0) {
+      return res.status(404).send("<h1>Story not found</h1>");
+      console.log("No Story Found!");
+    }
+
+    
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
   } catch (err) {
