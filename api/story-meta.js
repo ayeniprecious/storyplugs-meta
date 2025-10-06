@@ -51,6 +51,10 @@ export default async function handler(req, res) {
       </body>
       </html>
     `;
+      console.log("Slug received:", slug);
+      console.log("Env:", process.env.FIREBASE_PROJECT_ID);
+      console.log("Query result:", snapshot.empty ? "No results" : "Found");
+
 
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
