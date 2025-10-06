@@ -1,5 +1,6 @@
 import admin from "firebase-admin";
 
+
 // Initialize Firebase Admin only once
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -64,3 +65,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
+
