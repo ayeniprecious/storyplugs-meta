@@ -14,18 +14,36 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-  const { slug } = req.query;
+const { slug } = req.query;
+  const userAgent = req.headers["user-agent"] || "";
+  const isBot = /bot|facebook|twitter|whatsapp|linkedin|telegram|instagram|threads|crawler|spider|preview/i.test(userAgent);
 
   try {
+    // Use same query logic as your React app
     const storiesRef = db.collection("stories");
-    const snapshot = await storiesRef.where("slug", "==", slug).limit(1).get();
+    const snapshot = await storiesRef
+      .where("slug", "==", slug)
+      .where("status", "==", "approved")
+      .limit(1)
+    .get();
 
-    if (snapshot.docs.length===0) {
+    if (snapshot.docs.length === 0) {
       return res.status(404).send("<h1>Story not found</h1>");
-      console.log("Story Not Found!");
+      console.log("No Story Found!");
     }
 
-    const story = snapshot.docs[0].data();
+    const docSnap = snapshot.docs[0];
+    const storyId = docSnap.id;
+    const story = { id: storyId, ...docSnap.data() };
+
+    // Increment view count for bot requests as well
+    await storiesRef.doc(storyId).update({ views: admin.firestore.FieldValue.increment(1) });
+
+    if (!isBot) {
+      // Humans -> SPA handles story page
+      return res.redirect(302, `/story/${slug}`);
+    }
+
 
     const metaHtml = `
       <!DOCTYPE html>
