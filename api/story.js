@@ -20,8 +20,9 @@ export default async function handler(req, res) {
     const storiesRef = db.collection("stories");
     const snapshot = await storiesRef.where("slug", "==", slug).limit(1).get();
 
-    if (snapshot.empty) {
+    if (snapshot.docs.length===0) {
       return res.status(404).send("<h1>Story not found</h1>");
+      console.log("Story Not Found!");
     }
 
     const story = snapshot.docs[0].data();
@@ -49,7 +50,8 @@ export default async function handler(req, res) {
       </body>
       </html>
     `;
-
+    console.log(metaHtml);
+    console.log(story);
     res.setHeader("Content-Type", "text/html");
     res.status(200).send(metaHtml);
   } catch (err) {
