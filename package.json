@@ -3,6 +3,23 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "firebase-admin": "^13.5.0",
     "node-fetch": "^3.3.2"
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayeniprecious/storyplugs-meta.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ayeniprecious/storyplugs-meta/issues"
+  },
+  "homepage": "https://github.com/ayeniprecious/storyplugs-meta#readme"
 }

@@ -1,94 +1,62 @@
-import fetch from "node-fetch";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin only once
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = admin.firestore();
 
 export default async function handler(req, res) {
+  const { slug } = req.query;
+
   try {
-    const { id } = req.query;
-    const projectId = "story-plugs";
+    // Find the story with matching slug
+    const storiesRef = db.collection("stories");
+    const snapshot = await storiesRef.where("slug", "==", slug).limit(1).get();
 
-    if (!id) {
-      return res.status(400).send("❌ Missing story slug");
+    if (snapshot.empty) {
+      return res.status(404).json({ error: "Story not found" });
     }
 
-    const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+    const story = snapshot.docs[0].data();
 
-    const query = {
-      structuredQuery: {
-        from: [{ collectionId: "stories" }],
-        where: {
-          fieldFilter: {
-            field: { fieldPath: "slug" },
-            op: "EQUAL",
-            value: { stringValue: id },
-          },
-        },
-        limit: 1,
-      },
-    };
-
-    const response = await fetch(queryUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(query),
-    });
-
-    const results = await response.json();
-    const storyDoc = results.find((r) => r.document)?.document;
-
-    if (!storyDoc) {
-      return res.status(404).send("Story not found");
-    }
-
-    const fields = storyDoc.fields;
-    const title = fields.title?.stringValue || "StoryPlugs Story";
-    const description =
-      fields.excerpt?.stringValue ||
-      "Plug stories into the world on StoryPlugs.";
-    const image =
-      fields.coverUrl?.stringValue ||
-      "https://storyplugs.netlify.app/storyplugsbanner.png";
-
-    const storyUrl = `https://storyplugs.netlify.app/story/${id}`;
-
-    const html = `
+    // Build Open Graph meta tags
+    const metaHtml = `
       <!DOCTYPE html>
       <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>${title}</title>
-
-          <!-- Open Graph Meta -->
-          <meta property="og:title" content="${title}" />
-          <meta property="og:description" content="${description}" />
-          <meta property="og:image" content="${image}" />
-          <meta property="og:url" content="${storyUrl}" />
-          <meta property="og:type" content="article" />
-
-          <!-- Twitter Meta -->
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content="${title}" />
-          <meta name="twitter:description" content="${description}" />
-          <meta name="twitter:image" content="${image}" />
-
-          <meta name="theme-color" content="#C01918" />
-
-          <script>
-            const bots = /(facebook|twitter|linkedin|whatsapp|discord|telegram|bot|crawler|spider)/i;
-            if (!bots.test(navigator.userAgent)) {
-              window.location.href = "${storyUrl}";
-            }
-          </script>
-        </head>
-        <body>
-          <p>Redirecting to <a href="${storyUrl}">${storyUrl}</a>...</p>
-        </body>
+      <head>
+        <meta charset="UTF-8" />
+        <meta property="og:title" content="${story.title}" />
+        <meta property="og:description" content="${story.excerpt || story.content.slice(0, 150)}" />
+        <meta property="og:image" content="${story.coverUrl}" />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://your-vercel-app.vercel.app/story/${slug}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="${story.title}" />
+        <meta name="twitter:description" content="${story.excerpt || story.content.slice(0, 150)}" />
+        <meta name="twitter:image" content="${story.coverUrl}" />
+        <title>${story.title}</title>
+      </head>
+      <body>
+        <h1>${story.title}</h1>
+        <p>${story.excerpt || story.content.slice(0, 150)}...</p>
+        <img src="${story.coverUrl}" alt="cover" style="max-width:400px;" />
+      </body>
       </html>
     `;
 
     res.setHeader("Content-Type", "text/html");
-    res.status(200).send(html);
+    res.status(200).send(metaHtml);
+
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).send("Server Error: " + error.message);
+    console.error("Error loading story:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
