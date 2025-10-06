@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/story.js": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "routes": [
     {
       "src": "/story/(.*)",
@@ -14,11 +19,11 @@
     },
     {
       "src": "/story/(.*)",
-      "dest": "https://storyplugs.netlify.app/story/$1"
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/index.html"
     }
   ]
 }
